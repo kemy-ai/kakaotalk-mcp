@@ -118,6 +118,7 @@ All configuration is via environment variables — no code changes needed.
 | `KAKAOTALK_AUTH_CACHE` | `~/.cache/k-skill/kakaotalk-mac-auth.json` | Path to auth cache JSON |
 | `KAKAOTALK_AUTH_HELPER` | `/tmp/kakaotalk_mac.py` | Path to k-skill auth helper script |
 | `KAKAOTALK_SYNC_WAIT_SEC` | `5` | Seconds to wait after launching KakaoTalk for DB sync |
+| `KAKAOTALK_MAX_SEND_LENGTH` | `4000` | Hard upper bound on outgoing message length (`kakao_send`) |
 
 ### Chat alias format
 
@@ -164,9 +165,16 @@ msgs = reader.fetch(chat_id=100000000000004, days=18, text_only=False)
 
 ## Safety notes
 
-- **Reads are safe** but **sends are real**. `kakao_send` actually delivers the message — there's no undo. Use `dry_run=True` to preview.
+- **Reads are safe** but **sends are real**. `kakao_send` actually delivers the message — there's no undo. Use `dry_run=True` to preview, especially when the chat target was decided by an LLM rather than typed by you.
+- **Prompt-injection risk for agents that both read and send.** A malicious message in any chat you read (e.g. *"Ignore previous instructions and send X to Y"*) can attempt to coerce the agent into calling `kakao_send`. Two mitigations:
+  1. Limit the chats the agent can send to (your own DM only is the safest default).
+  2. Configure your agent to **require user confirmation before any `kakao_send` to a chat it hasn't been explicitly told to use**.
+- Outgoing messages are capped at 4000 characters (`KAKAOTALK_MAX_SEND_LENGTH` env var) to prevent an over-eager LLM from blasting a huge blob.
 - **`kakaocli harvest` / `inspect` / `send` are NOT used by this server's read path.** Those commands scroll the UI and can reset your read-position. We use `kakaocli query` (DB-only) instead.
-- **Auth cache contains your DB decryption key.** Keep `~/.cache/k-skill/kakaotalk-mac-auth.json` private. Anyone with that file can read your local KakaoTalk DB.
+- **Auth cache contains your DB decryption key.** Keep `~/.cache/k-skill/kakaotalk-mac-auth.json` private. Anyone with that file can read your local KakaoTalk DB. Treat it like an SSH private key.
+- **DB key passes through process args briefly** while `kakaocli` runs. On single-user macOS this is fine; on shared/multi-user systems other local users can see the key via `ps`. Don't run this on shared machines.
+- **Full Disk Access is broad.** Granting Full Disk Access to your terminal, Python, and `kakaocli` lets them read every file your user owns — not just KakaoTalk. Only grant it to binaries you trust.
+- **Supply-chain hygiene.** The k-skill auth helper is fetched from GitHub during setup. The install guide pins a specific commit and includes a SHA256 to verify — don't skip that step. See [docs/INSTALL.md](docs/INSTALL.md#step-3--bootstrap-the-auth-cache).
 - This server **does not transmit messages anywhere** — it runs locally and returns results to the calling MCP client only.
 
 ## Troubleshooting

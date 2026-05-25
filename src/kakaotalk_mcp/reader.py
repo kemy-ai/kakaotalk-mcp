@@ -42,8 +42,36 @@ from typing import Optional
 
 KST = timezone(timedelta(hours=9))
 
+
+def _validate_executable(path: str, name: str) -> str:
+    """Validate that `path` points to an executable file.
+
+    Defense-in-depth against environment-variable injection: if a hostile
+    process can set KAKAOCLI_BIN / KMSG_BIN / KAKAOTALK_AUTH_HELPER to an
+    arbitrary path, at least catch the case where the path is missing or
+    non-executable (the actual binary contents are still trusted).
+
+    Raises:
+        RuntimeError: when the path is missing or not executable.
+    """
+    if not path:
+        raise RuntimeError(f"{name} binary path is empty")
+    p = Path(path)
+    if not p.is_file():
+        raise RuntimeError(
+            f"{name} binary not found at: {path}\n"
+            f"Install it or set the env var to the correct path."
+        )
+    if not os.access(p, os.X_OK):
+        raise RuntimeError(f"{name} binary is not executable: {path}")
+    return str(p)
+
+
 # kakaocli CLI binary. Honor env override; otherwise discover via PATH.
-KAKAOCLI_BIN = os.environ.get("KAKAOCLI_BIN") or shutil.which("kakaocli") or "/opt/homebrew/bin/kakaocli"
+KAKAOCLI_BIN = _validate_executable(
+    os.environ.get("KAKAOCLI_BIN") or shutil.which("kakaocli") or "/opt/homebrew/bin/kakaocli",
+    "kakaocli",
+)
 
 # k-skill auth cache (database path + decryption key)
 AUTH_CACHE_PATH = Path(
@@ -51,8 +79,12 @@ AUTH_CACHE_PATH = Path(
     or (Path.home() / ".cache" / "k-skill" / "kakaotalk-mac-auth.json")
 )
 
-# Helper script for refreshing auth (downloaded on demand)
-AUTH_HELPER_PATH = Path(os.environ.get("KAKAOTALK_AUTH_HELPER", "/tmp/kakaotalk_mac.py"))
+# Helper script for refreshing auth. Default is under the user's data dir
+# instead of /tmp to reduce TOCTOU risk on multi-user systems.
+AUTH_HELPER_PATH = Path(
+    os.environ.get("KAKAOTALK_AUTH_HELPER", "")
+    or (Path.home() / ".local" / "share" / "kakaotalk-mcp" / "kakaotalk_mac.py")
+)
 AUTH_HELPER_URL = (
     "https://raw.githubusercontent.com/NomaDamas/k-skill/main/"
     "kakaotalk-mac/scripts/kakaotalk_mac.py"

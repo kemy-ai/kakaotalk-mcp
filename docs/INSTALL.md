@@ -39,16 +39,34 @@ KakaoTalk's local DB is at `~/Library/Containers/com.kakao.KakaoTalkMac/Data/...
 
 ## Step 3 — Bootstrap the auth cache
 
-The reader needs two things from KakaoTalk: the **database file path** and the **decryption key**. These are extracted by the `k-skill` helper:
+The reader needs two things from KakaoTalk: the **database file path** and the **decryption key**. These are extracted by the [`k-skill`](https://github.com/NomaDamas/k-skill) helper script.
+
+⚠️ **Supply-chain caution.** You are about to download and execute a Python script that will read your local KakaoTalk database. Pin to a known commit and verify the checksum before running.
 
 ```bash
-# Download the helper
-curl -s https://raw.githubusercontent.com/NomaDamas/k-skill/main/kakaotalk-mac/scripts/kakaotalk_mac.py \
-  -o /tmp/kakaotalk_mac.py
+# 1. Create a private user-local directory for the helper
+mkdir -p ~/.local/share/kakaotalk-mcp
 
-# Run it once to populate the auth cache
-python3 /tmp/kakaotalk_mac.py auth --refresh
+# 2. Pin to a specific k-skill commit (replace SHA below with the one you trust)
+KSKILL_COMMIT=ed30f22f86ab5e7515a8c7211b3702bfec00fba4
+
+# 3. Download
+curl -fsSL \
+  "https://raw.githubusercontent.com/NomaDamas/k-skill/${KSKILL_COMMIT}/kakaotalk-mac/scripts/kakaotalk_mac.py" \
+  -o ~/.local/share/kakaotalk-mcp/kakaotalk_mac.py
+
+# 4. Verify checksum (must match — abort if it doesn't)
+#    SHA256 for k-skill@ed30f22f (2026-05-25):
+echo "6a73749638b294198ce3ac20b4381aa11731b600bd7e3bc2463c4f5e5f00d92e  $HOME/.local/share/kakaotalk-mcp/kakaotalk_mac.py" \
+  | shasum -a 256 -c
+
+# 5. Run it to populate the auth cache
+python3 ~/.local/share/kakaotalk-mcp/kakaotalk_mac.py auth --refresh
 ```
+
+> The default path that `kakaotalk-mcp` looks for the helper at is `~/.local/share/kakaotalk-mcp/kakaotalk_mac.py`. Override with `KAKAOTALK_AUTH_HELPER` env var if you keep it elsewhere.
+
+**To update the pinned commit:** check the latest commit on the [k-skill repo](https://github.com/NomaDamas/k-skill/commits/main), recompute the SHA256 yourself, and replace both values above. Don't blindly follow `main` — that's how supply-chain attacks land.
 
 This creates `~/.cache/k-skill/kakaotalk-mac-auth.json` containing:
 
