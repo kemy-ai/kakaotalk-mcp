@@ -1,0 +1,6 @@
+{
+  "_comment": "Copy this file to ~/.config/kakaotalk-mcp/chats.json and replace values. Keys are aliases you'll use in MCP tools (kakao_read chat='family'). Values are numeric chat_ids — discover them via kakao_search.",
+  "family": 100000000000001,
+  "team": 100000000000002,
+  "ai-news": 100000000000003
+}
