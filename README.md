@@ -1,31 +1,38 @@
 # kakaotalk-mcp
 
-> Read & send KakaoTalk messages from Claude Code (or any MCP-compatible client) on macOS.
+> Two-way KakaoTalk automation for Claude Code (or any MCP-compatible client) on macOS — **read and send** messages programmatically.
 
-A Model Context Protocol (MCP) server that lets Claude read your KakaoTalk chats and send messages — without scraping the UI for reads, so it never affects your unread counters.
+A Model Context Protocol (MCP) server that gives Claude full access to your KakaoTalk: read chat history, search across all chats, and send messages back. Build any workflow that needs KakaoTalk as either an input source or an output channel.
 
 ## What it does
 
-| Tool | What it does | How |
-|---|---|---|
-| `kakao_read` | Read messages from a chat by date range | Direct DB read (no UI) |
-| `kakao_read_recent` | Read the most recent N messages | Direct DB read (no UI) |
-| `kakao_search` | Search messages by keyword across all chats | Direct DB read (no UI) |
-| `kakao_list_chats` | List your configured chat aliases | Local config |
-| `kakao_send` | Send a message to a chat | UI automation (opens KakaoTalk) |
+Two-way automation in 5 tools:
 
-**Read operations are safe.** They query the local SQLCipher database directly via [`kakaocli`](https://github.com/silver-flight-group/kakaocli), so they:
-- never open the chat in the UI
-- never reset your "unread from here" position
-- don't mark messages as read
+| Direction | Tool | What it does | How |
+|---|---|---|---|
+| 📥 **Read** | `kakao_read` | Read messages from a chat by date range | Direct DB read (no UI) |
+| 📥 **Read** | `kakao_read_recent` | Read the most recent N messages | Direct DB read (no UI) |
+| 📥 **Read** | `kakao_search` | Search messages by keyword across all chats | Direct DB read (no UI) |
+| ⚙️ Config | `kakao_list_chats` | List your configured chat aliases | Local config |
+| 📤 **Send** | `kakao_send` | Send a message to a chat | UI automation (opens KakaoTalk) |
 
-**Send operations use UI automation** via `kmsg`, so KakaoTalk must be running.
+**Reading** queries the local SQLCipher database directly via [`kakaocli`](https://github.com/silver-flight-group/kakaocli), so it:
+- never opens the chat in the UI
+- never resets your "unread from here" position
+- doesn't mark messages as read
+
+**Sending** uses UI automation via `kmsg`, so KakaoTalk must be running. Messages are sent for real — use `dry_run=True` to preview.
 
 ## Use cases
 
-- Daily AI/news curation from group chats (e.g. summarize → push to Notion/Slack)
-- Personal finance tracking from securities-firm notification chats (e.g. parse dividend alerts → log to Google Sheets)
-- Custom workflows that need to read or respond to KakaoTalk messages programmatically
+The combination of read + send opens up arbitrary KakaoTalk workflows. A few patterns:
+
+- **Periodic summarization** — pull the last N days of any chat (group, 1:1, channel) and summarize, classify, or extract structured data
+- **Notification parsing** — read messages from notification chats (banks, securities firms, delivery services, ticketing, etc.) and route the parsed data to Sheets / Notion / a database
+- **Cross-chat triage** — search across all chats for keywords, then forward matching items to a target chat with `kakao_send`
+- **Scheduled reports / alerts** — run on cron to digest a chat into a daily/weekly recap and send it back to yourself or a team chat
+- **Auto-reply or relay bots** — read incoming messages, generate a response with an LLM, send back with `kakao_send`
+- **Personal data export** — periodically snapshot conversations for backup or offline analysis
 
 ## Requirements
 
