@@ -31,3 +31,7 @@ chats.local.json
 .pytest_cache/
 .coverage
 htmlcov/
+
+# Local working notes (not for public consumption)
+HANDOFF.md
+memory/
