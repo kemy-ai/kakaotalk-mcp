@@ -178,7 +178,7 @@ msgs = reader.fetch(chat_id=100000000000004, days=18, text_only=False)
 
 ## License
 
-[MIT](LICENSE) © kemy-ai
+[MIT](LICENSE) © 2026 Kemy / Ikda Company
 
 ## Acknowledgments
 

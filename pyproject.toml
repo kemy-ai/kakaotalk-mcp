@@ -6,7 +6,10 @@ readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "MIT" }
 authors = [
-    { name = "kemy-ai" },
+    { name = "Kemy" },
+]
+maintainers = [
+    { name = "Kemy" },
 ]
 keywords = ["mcp", "claude", "kakaotalk", "automation", "macos"]
 classifiers = [
